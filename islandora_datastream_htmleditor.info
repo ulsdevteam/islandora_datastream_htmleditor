@@ -1,0 +1,9 @@
+name = Islandora Datastream HTML Editor
+description = "Provides a way to directly edit the datastream HTML values."
+dependencies[] = ckeditor
+dependencies[] = islandora
+version = 7.x-1.6
+core = 7.x
+package = Islandora Editors
+files[] = includes/admin.form.inc
+configure = admin/islandora/tools/islandora_datastream_htmleditor

@@ -1,0 +1,176 @@
+<?php
+
+define('ISLANDORA_EDIT_DATASTREAM_CONTENT', 'Edit datastream content');
+
+/**
+ * Implements hook_menu().
+ */
+function islandora_datastream_htmleditor_menu () {
+  $items = array();
+  $items['islandora/object/%islandora_object/datastream/%islandora_datastream/edit'] = array(
+    'title' => 'Edit text/html datastream',
+    'description' => 'Edit Datastream HTML',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_datastream_htmleditor_form', 2, 4), //put the name of the form here
+    'type' => MENU_CALLBACK,
+//    'access callback' => array('islandora_datastream_access', 4),
+//      'access arguments' => array('administer site configuration'),
+    'access arguments' => array(ISLANDORA_EDIT_DATASTREAM_CONTENT),
+//    'load arguments' => array(2),
+  );
+  $items['admin/islandora/tools/islandora_datastream_htmleditor'] = array(
+    'title' => 'Islandora Datastream HTML Editor',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_datastream_htmleditor_admin_settings'),
+    'access arguments' => array('administer islandora_datastream_htmleditor'),
+    'file' => 'includes/admin.form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );  
+  return $items;
+}
+
+/**
+ * Implements hook_form().
+ */
+function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_object, $datastream) {
+  // load the datastream for this object and pull out the DESC field
+  $tempFilename = tempnam("/tmp", "DESC-html_");
+  if (!$datastream) {
+    drupal_set_message(t("Fedora desc object doesn't have an DESC stream."));
+    drupal_not_found();
+    exit;
+  }
+  if (is_object($datastream)) {
+    $datastream->getContent($tempFilename);
+    $file_text = implode("", file($tempFilename));
+  } else {
+     $file_text = '';
+  }
+  $form['desc'] = array(
+    '#title' => $datastream->id,
+    '#format' => 'full_html',
+    '#type' => 'text_format', // sets editor to wysiwyg!!
+    '#value' => $file_text,
+    '#required' => TRUE, //make this field required 
+  );
+  $form['object_pid'] = array(
+     '#value' => $islandora_object->id,
+     '#type' => 'hidden'
+  );
+  $form['datastream_label'] = array(
+     '#value' => $datastream->label,
+     '#type' => 'hidden'
+  );
+
+  $form['datastream_id'] = array(
+     '#value' => $datastream->id,
+     '#type' => 'hidden'
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  $form['cancel'] = array(
+    '#markup' => l(t('Cancel'), "islandora/object/{$datastream->parent->id}/manage/datastreams"),
+    '#weight' => 20,
+    '#suffix' => '</div>' 
+  );
+
+  @unlink($tempFilename);
+  return $form;
+}
+
+/**
+ * Validates the form.
+ */
+function islandora_datastream_htmleditor_form_validate($form, &$form_state) {
+  // do nothing 
+}
+
+/**
+ * Add a submit handler/function to the form.
+ *
+ * This will add a completion message to the screen when the
+ * form successfully processes
+ */
+function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
+  if (isset($form_state['input']['desc']['value'])) {
+    $dsid = $form_state['input']['datastream_id'];
+    // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
+    // The easiest way to do this, as opposed to a string of cases or if/then/elses, is the ternary operator, e.g.
+    // $variable = isThisThingTrueOrFalse($thing) ? setToThisIfTrue() : setToThisIfFalse();
+    if (isset($form_state['build_info']['args'][0]) && get_class($form_state['build_info']['args'][0]) == 'IslandoraFedoraObject') {
+      $datastream = $form_state['build_info']['args'][0][$dsid];
+      $datastream->label = $form_state['input']['datastream_label'];
+      $datastream->mimeType = 'text/html';
+      $tempFilename = tempnam("/tmp", "DESC-html_save_");
+      // save the html body to a file -- datastream will be able to load from the file
+      $handle = file_put_contents($tempFilename, $form_state['input']['desc']['value']);
+      if ($handle) {
+        $datastream->setContentFromFile($tempFilename);
+        // There's no harm in doing this if the datastream is already ingested or if the object is only constructed.
+        $form_state['build_info']['args'][0]->ingestDatastream($datastream);
+      }
+      @unlink($tempFilename);
+    }
+    drupal_set_message(t('The form has been submitted.  Updated HTML has been saved.'));
+  } else {
+    drupal_set_message(t('The form has been submitted but there was a problem saving the HTML to the datastream.'));
+  }
+  $form_state['redirect'] = "islandora/object/{$form_state['input']['object_pid']}/manage/datastreams";
+}
+
+/**
+ * Implements islandora_datastream_htmleditor_islandora_datastream_access().
+ */
+function islandora_datastream_htmleditor_islandora_datastream_access($op, $islandora_datastream) {
+  $suppress_dsids_str = variable_get('islandora_datastream_htmleditor_suppress_dsids');
+  $suppress_dsids = explode(",", $suppress_dsids_str);
+  if (($op == ISLANDORA_PURGE || $op = ISLANDORA_EDIT_DATASTREAM_CONTENT || $op == ISLANDORA_REPLACE_DATASTREAM_CONTENT) && 
+     (!in_array($islandora_datastream->id, $suppress_dsids) && strtolower($islandora_datastream->mimetype) == 'text/html')) {
+    return true;
+  }
+}
+
+/**
+ * Implements hook_islandora_edit_datastream_registry().
+ */
+function islandora_datastream_htmleditor_islandora_edit_datastream_registry($islandora_object, $datastream) {
+ // The edit_datastream_registry hook runs once for each DSID on the object.
+  if (strtolower($datastream->mimetype) == 'text/html') {
+    return array(
+      array(
+        'name' => t('text/HTML Edit Route'),
+        'url' => "islandora/object/{$islandora_object->id}/datastream/{$datastream->id}/edit",
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function islandora_datastream_htmleditor_theme() {
+  return array(
+    // Default object template.
+    'islandora_datastream_htmleditor_datastream_edit_link' => array(
+      'file' => 'theme/theme.inc',
+      'template' => 'theme/islandora-object',
+      'variables' => array('islandora_object' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function islandora_datastream_htmleditor_permission() {
+  return array(
+    ISLANDORA_EDIT_DATASTREAM_CONTENT => array(
+      'title' => t('Edit html metadata'),
+      'description' => t('Edit html metadata for datastream objects in the repository.'),
+    ),
+  );
+}
