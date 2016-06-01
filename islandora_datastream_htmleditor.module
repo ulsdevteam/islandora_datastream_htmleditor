@@ -99,19 +99,14 @@ function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
   if (isset($form_state['input']['desc']['value'])) {
     $dsid = $form_state['input']['datastream_id'];
     // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
-    // The easiest way to do this, as opposed to a string of cases or if/then/elses, is the ternary operator, e.g.
-    // $variable = isThisThingTrueOrFalse($thing) ? setToThisIfTrue() : setToThisIfFalse();
     if (isset($form_state['build_info']['args'][0]) && get_class($form_state['build_info']['args'][0]) == 'IslandoraFedoraObject') {
+      error_log('islandora_datastream_htmleditor_form_submit for '. $dsid);
       $datastream = $form_state['build_info']['args'][0][$dsid];
-      $datastream->label = $form_state['input']['datastream_label'];
-      $datastream->mimeType = 'text/html';
       $tempFilename = tempnam("/tmp", "DESC-html_save_");
-      // save the html body to a file -- datastream will be able to load from the file
+      // save the html body to a file -- datastream can load from the file
       $handle = file_put_contents($tempFilename, $form_state['input']['desc']['value']);
       if ($handle) {
         $datastream->setContentFromFile($tempFilename);
-        // There's no harm in doing this if the datastream is already ingested or if the object is only constructed.
-        $form_state['build_info']['args'][0]->ingestDatastream($datastream);
       }
       @unlink($tempFilename);
     }
@@ -126,10 +121,10 @@ function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
  * Implements islandora_datastream_htmleditor_islandora_datastream_access().
  */
 function islandora_datastream_htmleditor_islandora_datastream_access($op, $islandora_datastream) {
-  $suppress_dsids_str = variable_get('islandora_datastream_htmleditor_suppress_dsids');
-  $suppress_dsids = explode(",", $suppress_dsids_str);
+  $editable_dsids_str = variable_get('islandora_datastream_htmleditor_editable_dsids');
+  $editable_dsids = explode(",", str_replace(" ", "", $editable_dsids_str));
   if (($op == ISLANDORA_PURGE || $op = ISLANDORA_EDIT_DATASTREAM_CONTENT || $op == ISLANDORA_REPLACE_DATASTREAM_CONTENT) && 
-     (!in_array($islandora_datastream->id, $suppress_dsids) && strtolower($islandora_datastream->mimetype) == 'text/html')) {
+     (in_array($islandora_datastream->id, $editable_dsids) && strtolower($islandora_datastream->mimetype) == 'text/html')) {
     return true;
   }
 }
@@ -139,7 +134,7 @@ function islandora_datastream_htmleditor_islandora_datastream_access($op, $islan
  */
 function islandora_datastream_htmleditor_islandora_edit_datastream_registry($islandora_object, $datastream) {
  // The edit_datastream_registry hook runs once for each DSID on the object.
-  if (strtolower($datastream->mimetype) == 'text/html') {
+  if ((strtolower($datastream->mimetype) == 'text/html') && (islandora_datastream_htmleditor_islandora_datastream_access(ISLANDORA_EDIT_DATASTREAM_CONTENT, $datastream))) {
     return array(
       array(
         'name' => t('text/HTML Edit Route'),
@@ -147,20 +142,6 @@ function islandora_datastream_htmleditor_islandora_edit_datastream_registry($isl
       ),
     );
   }
-}
-
-/**
- * Implements hook_theme().
- */
-function islandora_datastream_htmleditor_theme() {
-  return array(
-    // Default object template.
-    'islandora_datastream_htmleditor_datastream_edit_link' => array(
-      'file' => 'theme/theme.inc',
-      'template' => 'theme/islandora-object',
-      'variables' => array('islandora_object' => NULL),
-    ),
-  );
 }
 
 /**
@@ -174,3 +155,4 @@ function islandora_datastream_htmleditor_permission() {
     ),
   );
 }
+

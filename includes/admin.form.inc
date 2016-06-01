@@ -18,11 +18,11 @@
  */
 function islandora_datastream_htmleditor_admin_settings(array $form, array &$form_state) {
   $form = array(
-    'suppress_dsids' => array(
+    'editable_dsids' => array(
       '#type' => 'textfield',
-      '#title' => t('Suppress Datastream ID values'),
-      '#description' => t('Prevent editor for being available for specific text/html datastreams by listing these Datastream ID values.  Multiple values must be separated with a semicolon.'),
-      '#default_value' => variable_get('islandora_datastream_htmleditor_suppress_dsids', ''),
+      '#title' => t('Datastream ID values that allow HTML editing'),
+      '#description' => t('Provide an HTML editor for specific "text/html" datastreams by listing these Datastream ID values.  Multiple values must be separated with a semicolon.'),
+      '#default_value' => variable_get('islandora_datastream_htmleditor_editable_dsids', ''),
     ),
     'submit' => array(
       '#type' => 'submit',
@@ -49,11 +49,11 @@ function islandora_datastream_htmleditor_admin_settings_submit(array $form, arra
   $id = $form_state['triggering_element']['#id'];
   switch ($id) {
     case 'edit-submit':
-      variable_set('islandora_datastream_htmleditor_suppress_dsids', $form_state['values']['suppress_dsids']);
+      variable_set('islandora_datastream_htmleditor_editable_dsids', $form_state['values']['editable_dsids']);
       break;
 
     case 'edit-reset':
-      variable_del('islandora_datastream_htmleditor_suppress_dsids');
+      variable_del('islandora_datastream_htmleditor_editable_dsids');
       break;
   }
 }

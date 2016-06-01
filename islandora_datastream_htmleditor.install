@@ -6,5 +6,5 @@
  */
 function islandora_datastream_htmleditor_uninstall() {
   // Add new variables to clean up.
-  variable_del('islandora_datastream_htmleditor_suppress_dsids');
+  variable_del('islandora_datastream_htmleditor_editable_dsids');
 } 
