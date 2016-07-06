@@ -97,7 +97,6 @@ function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
     $dsid = $form_state['input']['datastream_id'];
     // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
     if (isset($form_state['build_info']['args'][0]) && get_class($form_state['build_info']['args'][0]) == 'IslandoraFedoraObject') {
-      error_log('islandora_datastream_htmleditor_form_submit for '. $dsid);
       $datastream = $form_state['build_info']['args'][0][$dsid];
       $tempFilename = tempnam("/tmp", "DESC-html_save_");
       // save the html body to a file -- datastream can load from the file
