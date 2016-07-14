@@ -7,7 +7,7 @@ define('ISLANDORA_EDIT_DATASTREAM_CONTENT', 'Edit datastream content');
  */
 function islandora_datastream_htmleditor_menu () {
   $items = array();
-  $items['islandora/object/%islandora_object/datastream/%islandora_datastream/edithtml'] = array(
+  $items['islandora/object/%islandora_object/datastream/%islandora_datastream/htmledit'] = array(
     'title' => 'Edit text/html datastream',
     'description' => 'Edit Datastream HTML',
     'page callback' => 'drupal_get_form',
@@ -34,7 +34,7 @@ function islandora_datastream_htmleditor_menu () {
  */
 function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_object, $datastream) {
   // load the datastream for this object and pull out the DESC field
-  $tempFilename = tempnam("/tmp", "DESC-html_");
+  $tempFilename = tempnam("/tmp", "DESC-html_"); 
   if (!$datastream) {
     drupal_set_message(t("Fedora desc object doesn't have an DESC stream."));
     drupal_not_found();
@@ -42,7 +42,12 @@ function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_ob
   }
   if (is_object($datastream)) {
     $datastream->getContent($tempFilename);
-    $file_text = implode("", file($tempFilename));
+    $lines = file($tempFilename);
+    $file_text = '';
+    foreach ($lines as $line) {
+      $line = mb_ereg_replace('(\x92)', "'", $line);
+      $file_text .= mb_convert_encoding($line, 'HTML-ENTITIES', "UTF-8");
+    }
   } else {
      $file_text = '';
   }
@@ -137,8 +142,8 @@ function islandora_datastream_htmleditor_islandora_edit_datastream_registry($isl
   if ((strtolower($datastream->mimetype) == 'text/html') && (islandora_datastream_htmleditor_islandora_datastream_access(ISLANDORA_EDIT_DATASTREAM_CONTENT, $datastream))) {
     return array(
       array(
-        'name' => t('text/HTML Edit Route'),
-        'url' => "islandora/object/{$islandora_object->id}/datastream/{$datastream->id}/edithtml",
+        'name' => t('text/HTML Edit Route'), 
+        'url' => "islandora/object/{$islandora_object->id}/datastream/{$datastream->id}/htmledit",
       ),
     );
   }
