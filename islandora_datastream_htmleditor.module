@@ -11,12 +11,9 @@ function islandora_datastream_htmleditor_menu () {
     'title' => 'Edit text/html datastream',
     'description' => 'Edit Datastream HTML',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('islandora_datastream_htmleditor_form', 2, 4), //put the name of the form here
+    'page arguments' => array('islandora_datastream_htmleditor_form', 2, 4),
     'type' => MENU_CALLBACK,
-//    'access callback' => array('islandora_datastream_access', 4),
-//      'access arguments' => array('administer site configuration'),
     'access arguments' => array(ISLANDORA_EDIT_DATASTREAM_CONTENT),
-//    'load arguments' => array(2),
   );
   $items['admin/islandora/tools/islandora_datastream_htmleditor'] = array(
     'title' => 'Islandora Datastream HTML Editor',
@@ -25,7 +22,7 @@ function islandora_datastream_htmleditor_menu () {
     'access arguments' => array('administer site configuration'),
     'file' => 'includes/admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
-  );  
+  );
   return $items;
 }
 
@@ -56,7 +53,7 @@ function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_ob
     '#format' => 'full_html',
     '#type' => 'text_format', // sets editor to wysiwyg!!
     '#value' => $file_text,
-    '#required' => TRUE, //make this field required 
+    '#required' => TRUE, //make this field required
   );
   $form['object_pid'] = array(
      '#value' => $islandora_object->id,
@@ -80,7 +77,7 @@ function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_ob
   $form['cancel'] = array(
     '#markup' => l(t('Cancel'), "islandora/object/{$datastream->parent->id}/manage/datastreams"),
     '#weight' => 20,
-    '#suffix' => '</div>' 
+    '#suffix' => '</div>'
   );
 
   @unlink($tempFilename);
@@ -91,7 +88,7 @@ function islandora_datastream_htmleditor_form($form, &$form_state, $islandora_ob
  * Validates the form.
  */
 function islandora_datastream_htmleditor_form_validate($form, &$form_state) {
-  // do nothing 
+  // do nothing
 }
 
 /**
@@ -105,7 +102,6 @@ function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
     $dsid = $form_state['input']['datastream_id'];
     // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
     if (isset($form_state['build_info']['args'][0]) && get_class($form_state['build_info']['args'][0]) == 'IslandoraFedoraObject') {
-      error_log('islandora_datastream_htmleditor_form_submit for '. $dsid);
       $datastream = $form_state['build_info']['args'][0][$dsid];
       $tempFilename = tempnam("/tmp", "DESC-html_save_");
       // save the html body to a file -- datastream can load from the file
@@ -128,7 +124,7 @@ function islandora_datastream_htmleditor_form_submit($form, &$form_state) {
 function islandora_datastream_htmleditor_islandora_datastream_access($op, $islandora_datastream) {
   $editable_dsids_str = variable_get('islandora_datastream_htmleditor_editable_dsids');
   $editable_dsids = explode(",", str_replace(" ", "", $editable_dsids_str));
-  if (($op == ISLANDORA_PURGE || $op = ISLANDORA_EDIT_DATASTREAM_CONTENT || $op == ISLANDORA_REPLACE_DATASTREAM_CONTENT) && 
+  if (($op == ISLANDORA_PURGE || $op = ISLANDORA_EDIT_DATASTREAM_CONTENT || $op == ISLANDORA_REPLACE_DATASTREAM_CONTENT) &&
      (in_array($islandora_datastream->id, $editable_dsids) && strtolower($islandora_datastream->mimetype) == 'text/html')) {
     return true;
   }
