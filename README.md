@@ -5,6 +5,8 @@ Provides a way to directly edit the datastream HTML values.
 
 This module works nicely with the [islandora_datastream_blocks](https://github.com/ulsdevteam/islandora_datastream_blocks) module to be able to create, edit, and display HTML metadata related to any islandora object.
 
+A separate module has been written [islandora_datastream_blocks_html_teaser](https://github.com/ulsdevteam/islandora_datastream_blocks_html_teaser) to manage a teaser version of the full HTML by inserting a configurable "break" that renders as a "Read more..." link.
+
 ## Configuration
 
 The configuration at `admin/islandora/tools/islandora_datastream_htmleditor` simply sets up which datastream/s can use the HTML editor.  There is also a permission setting to Edit html metadata at `admin/people/permissions` to set who is able to edit HTML datastreams.  
