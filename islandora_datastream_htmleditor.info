@@ -1,6 +1,6 @@
 name = Islandora Datastream HTML Editor
 description = "Provides a way to directly edit the datastream HTML values."
-dependencies[] = ckeditor
+# dependencies[] = wysiwyg
 dependencies[] = islandora
 version = 7.x-1.6
 core = 7.x
